@@ -68,12 +68,14 @@
             color: #fffb96;
             text-shadow: 1px 1px 2px #000;
         }
-        .dynamic {
-            animation: bounce 0.5s infinite alternate;
+        textarea {
+            resize: none;
+            width: 90%;
+            margin: 10px 0;
         }
-        @keyframes bounce {
-            from { transform: translateY(0); }
-            to { transform: translateY(-5px); }
+        .warning {
+            color: yellow;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -85,7 +87,7 @@
             <a href="#" onclick="showPage('points')" class="box">积分系统</a>
             <a href="#" onclick="showPage('toilet')" class="box">如厕申请</a>
             <a href="#" onclick="showPage('punishments')" class="box">惩罚与奖励</a>
-            <a href="#" onclick="showPage（'recordFeeling')" class="box">记录感受</a>
+            <a href="#" onclick="showPage('recordFeeling')" class="box">记录感受</a>
         </div>
 
         <div id="tasks" style="display:none;">
@@ -113,7 +115,7 @@
 
         <div id="feeling" style="display:none;">
             <h2>记录感受</h2>
-            <textarea id="feelingInput" rows="5" cols="30" placeholder="记录你的感受..."></textarea>
+            <textarea id="feelingInput" rows="5" placeholder="记录你的感受..."></textarea>
             <br>
             <button onclick="saveFeeling()">保存</button>
         </div>
@@ -122,8 +124,13 @@
     <script>
         let points = localStorage.getItem('points') ? parseInt(localStorage.getItem('points')) : 0;
         let toiletCount = localStorage.getItem('toiletCount') ? parseInt(localStorage.getItem('toiletCount')) : 3;
+        let feelingRecorded = false;
 
         const tasks = [
+            { text: "多喝500ml水", points: 20 },
+            { text: "忍住尿意30分钟", points: 25 },
+            { text: "站立不动10分钟", points: 15 },
+            { text: "抱水瓶蹲下20次", points: 30 }
             { text: "多喝500ml水", points: 20 },
             { text: "忍住尿意30分钟", points: 25 },
             { text: "站立不动10分钟", points: 15 },
@@ -154,6 +161,11 @@
 
         const punishments = [
             "喝300ml水然后深蹲20次",
+            "按压膀胱30秒",
+            "跪姿保持10分钟",
+            "积分扣除50分",
+            "连续写500字不得停"
+            "喝300ml水然后深蹲20次",
             "按压膀胱30秒，重复3次",
             "减少如厕机会1次",
             "跪姿保持10分钟",
@@ -174,6 +186,7 @@
             "30分钟内不准申请如厕",
             "连续30分钟不能弯腰",
             "跪姿保持10分钟"
+
         ];
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -189,8 +202,6 @@
                 li.appendChild(btn);
                 taskList.appendChild(li);
             });
-
-            setInterval(randomMandatoryTask, 5000); // 每5秒触发随机任务
         });
 
         function showPage(pageId) {
@@ -199,57 +210,6 @@
             });
         }
 
-        function completeTask(task) {
-            const randomPoints = Math.floor(Math.random() * 11) - 5; // 随机增减 -5到+5积分
-            points += task.points + randomPoints;
-            localStorage.setItem('points', points);
-            document.getElementById("points-value").innerText = points;
-            alert(`任务完成！积分变化: ${task.points} + ${randomPoints}`);
-        }
-
-        function applyToilet() {
-            if (points < 50) {
-                document.getElementById("toiletStatus").innerText = "积分不足50，无法申请！";
-                return;
-            }
-            points -= 50;
-            localStorage.setItem('points', points);
-            document.getElementById("points-value").innerText = points;
-
-            if (toiletCount > 0) {
-                toiletCount--;
-                localStorage.setItem('toiletCount', toiletCount);
-                document.getElementById("toiletCount").innerText = toiletCount;
-                document.getElementById("toiletStatus").innerText = "如厕申请通过！";
-            } else {
-                document.getElementById("toiletStatus").innerText = "今日如厕次数已达上限！";
-            }
-        }
-
-        function randomPunishment() {
-            const punishment = punishments[Math.floor(Math.random() * punishments.length)];
-            document.getElementById("punishmentResult").innerText = "你的惩罚: " + punishment;
-        }
-
-        function randomMandatoryTask() {
-            const randomTask = tasks[Math.floor(Math.random() * tasks.length)];
-            alert("魔鬼任务降临: " + randomTask.text + "，快去完成！");
-        }
-
-        function recordFeeling() {
-            showPage("feeling");
-        }
-
-        function saveFeeling() {
-            const feeling = document.getElementById("feelingInput").value.trim();
-            if (!feeling) {
-                alert("请记录你的感受，否则惩罚加倍！");
-                randomPunishment(); // 强制惩罚
-                return;
-            }
-            alert("感受记录成功！谢谢你的反馈！");
-            showPage("tasks");
-        }
         function completeTask(task) {
             if (!feelingRecorded) {
                 // 强制扣分并执行随机惩罚
@@ -269,6 +229,36 @@
         function randomPunishment() {
             const punishment = punishments[Math.floor(Math.random() * punishments.length)];
             document.getElementById("punishmentResult").innerText = "你的惩罚: " + punishment;
+        }
+
+        function applyToilet() {
+            if (points < 50) {
+                document.getElementById("toiletStatus").innerText = "积分不足50，无法申请！";
+                return;
+            }
+            points -= 50;
+            toiletCount--;
+            localStorage.setItem('points', points);
+            localStorage.setItem('toiletCount', toiletCount);
+            document.getElementById("toiletCount").innerText = toiletCount;
+            document.getElementById("points-value").innerText = points;
+            document.getElementById("toiletStatus").innerText = "如厕申请通过！";
+        }
+
+        function recordFeeling() {
+            showPage("feeling");
+        }
+
+        function saveFeeling() {
+            const feeling = document.getElementById("feelingInput").value.trim();
+            if (!feeling) {
+                alert("请先记录你的感受！");
+                return;
+            }
+            feelingRecorded = true;
+            document.getElementById("feelingInput").value = ""; // 清空文本框
+            alert("感受记录完成！");
+            showPage("tasks");
         }
     </script>
 </body>
